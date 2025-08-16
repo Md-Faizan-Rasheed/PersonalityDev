@@ -36,16 +36,23 @@ app.add_middleware(
 )
 
 
+# client = OpenAI(
+#     base_url=os.getenv("OPENROUTER_BASE_URL"),
+#     api_key=os.getenv("OPENAI_API_KEY")    # 2) required key
+# )
+
+# # ---------- 4. utility helpers ----------
+# SENDER_EMAIL   = os.getenv("SENDER_EMAIL")
+# SENDER_PWD     = os.getenv("SENDER_PASSWORD")
+
 client = OpenAI(
     base_url=os.getenv("OPENROUTER_BASE_URL"),
-    api_key=os.getenv("OPENAI_API_KEY")    # 2) required key
+    api_key=os.getenv("OPENROUTER_API_KEY")
 )
 
-# ---------- 4. utility helpers ----------
-# DEFAULT_NAME   = os.getenv("DEFAULT_RECIPIENT_NAME", stored_name)
-# DEFAULT_EMAIL  = os.getenv("DEFAULT_RECEIVER_EMAIL", stored_email)
-SENDER_EMAIL   = os.getenv("SENDER_EMAIL")
-SENDER_PWD     = os.getenv("SENDER_PASSWORD")
+# # Environment variables
+SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+SENDER_PWD = os.getenv("SENDER_PASSWORD")
 
 
 # Request body model
