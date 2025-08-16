@@ -482,15 +482,16 @@ def submit_answers(payload: AnswerPayload):
 
     return {"analysis": llm_response, "email_status": "sent"}
 
-from PIL import Image, ImageDraw, ImageFont
-from datetime import datetime
 
-def get_text_size(draw, text, font):
-    """Get text width and height for Pillow ≥10."""
-    bbox = draw.textbbox((0, 0), text, font=font)
-    return bbox[2] - bbox[0], bbox[3] - bbox[1]
+# from PIL import Image, ImageDraw, ImageFont
+# from datetime import datetime
+# import os
+# def get_text_size(draw, text, font):
+#     """Get text width and height for Pillow ≥10."""
+#     bbox = draw.textbbox((0, 0), text, font=font)
+#     return bbox[2] - bbox[0], bbox[3] - bbox[1]
 
-def create_certificate(recipient_name, personality_type, skills, careers, icon_path, output_file="certificate.png"):
+# def create_certificate(recipient_name, personality_type, skills, careers, icon_path, output_file="certificate.png"):
     # --- Canvas setup ---
     img_width, img_height = 1150, 650
     background_color = (255, 255, 255)
@@ -509,6 +510,115 @@ def create_certificate(recipient_name, personality_type, skills, careers, icon_p
     font_text = ImageFont.truetype("arial.ttf", 20)
     font_small = ImageFont.truetype("arialbd.ttf", 18)
     font_big_logo = ImageFont.truetype("arialbd.ttf", 40)  # Large font for "College Skills"
+
+    # --- Outer border ---
+    border_margin = 20
+    draw.rectangle(
+        [border_margin, border_margin, img_width - border_margin, img_height - border_margin],
+        outline=text_color, width=2
+    )
+
+    # --- "College Skills" text instead of logo ---
+    left_x = 100
+    logo_y = 60
+    draw.text((left_x, logo_y), "College", fill=yellow_color, font=font_big_logo)
+    draw.text((left_x, logo_y + 45), "Skills", fill=black_color, font=font_big_logo)
+
+    # --- Right Icon ---
+    try:
+        icon = Image.open(icon_path).convert("RGBA")
+        icon.thumbnail((160, 160))
+        icon_y = 60
+        icon_x = img_width - 100 - icon.width
+        img.paste(icon, (icon_x, icon_y), icon)
+    except Exception as e:
+        print(f"⚠️ Icon load failed: {e}")
+
+    # --- Title ---
+    y_title = 160
+    w, h = get_text_size(draw, "CERTIFICATE OF COMPLETION", font_title)
+    draw.text(((img_width - w) / 2, y_title), "CERTIFICATE OF COMPLETION", font=font_title, fill=text_color)
+
+    # --- Recipient Name ---
+    y_name = y_title + h + 40
+    w, h = get_text_size(draw, recipient_name, font_name)
+    draw.text(((img_width - w) / 2, y_name), recipient_name, font=font_name, fill=text_color)
+
+    # --- Personality Type ---
+    y_type = y_name + h + 20
+    w, h = get_text_size(draw, personality_type, font_subtitle)
+    draw.text(((img_width - w) / 2, y_type), personality_type, font=font_subtitle, fill=text_color)
+
+    # --- Two Columns ---
+    y_section_start = y_type + h + 70
+    col_x1 = 200
+    col_x2 = 650
+
+    draw.text((col_x1, y_section_start), "POSITIVE SKILLS", fill=text_color, font=font_section)
+    draw.text((col_x2, y_section_start), "SUGGESTED CAREER AREAS", fill=text_color, font=font_section)
+
+    for i, skill in enumerate(skills):
+        draw.text((col_x1, y_section_start + 30 + (i * 30)), f"• {skill}", fill=black_color, font=font_text)
+
+    for i, career in enumerate(careers):
+        draw.text((col_x2, y_section_start + 30 + (i * 30)), f"• {career}", fill=black_color, font=font_text)
+
+    # --- Bottom Date ---
+    formatted_date = datetime.now().strftime("%d %B %Y")
+    bottom_y = img_height - 70
+    draw.text((col_x1, bottom_y), formatted_date, fill=text_color, font=font_small)
+
+    img.save(output_file)
+    print(f"✅ Certificate saved as {output_file}")
+
+
+
+from PIL import Image, ImageDraw, ImageFont
+from datetime import datetime
+import os
+
+def get_text_size(draw, text, font):
+    """Get text width and height for Pillow ≥10."""
+    bbox = draw.textbbox((0, 0), text, font=font)
+    return bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+def load_font(font_name, size):
+    """Try to load a font from local 'fonts' dir, else use default."""
+    try:
+        font_path = os.path.join(os.path.dirname(__file__), "fonts", font_name)
+        if os.path.exists(font_path):
+            return ImageFont.truetype(font_path, size)
+        else:
+            # Try system path (Linux)
+            system_font_path = f"/usr/share/fonts/truetype/dejavu/{font_name}"
+            if os.path.exists(system_font_path):
+                return ImageFont.truetype(system_font_path, size)
+            else:
+                print(f"⚠️ Font '{font_name}' not found, using default font.")
+                return ImageFont.load_default()
+    except Exception as e:
+        print(f"⚠️ Font load error ({font_name}): {e}")
+        return ImageFont.load_default()
+
+def create_certificate(recipient_name, personality_type, skills, careers, icon_path, output_file="certificate.png"):
+    # --- Canvas setup ---
+    img_width, img_height = 1150, 650
+    background_color = (255, 255, 255)
+    text_color = (22, 50, 86)  # Dark blue
+    yellow_color = (255, 204, 0)  # Bright yellow
+    black_color = (0, 0, 0)
+
+    img = Image.new("RGB", (img_width, img_height), background_color)
+    draw = ImageDraw.Draw(img)
+
+    # --- Fonts ---
+    font_title = load_font("DejaVuSans-Bold.ttf", 30)   # replaces arialbd.ttf
+    font_name = load_font("DejaVuSans-Bold.ttf", 50)
+    font_subtitle = load_font("DejaVuSans-Bold.ttf", 28)
+    font_section = load_font("DejaVuSans-Bold.ttf", 20)
+    font_text = load_font("DejaVuSans.ttf", 20)         # replaces arial.ttf
+    font_small = load_font("DejaVuSans-Bold.ttf", 18)
+    font_big_logo = load_font("DejaVuSans-Bold.ttf", 40)
 
     # --- Outer border ---
     border_margin = 20
